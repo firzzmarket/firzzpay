@@ -73,3 +73,13 @@ footer { color:#5f6675;font-size:9px;letter-spacing:1px;margin-top:35px;display:
 .auth-switch{text-align:center;color:#aab1c0;font-size:11px;margin:22px 0}.auth-switch button{border:0;background:transparent;color:#91afff;font-weight:700}
 .auth-safe{display:flex;justify-content:center;align-items:center;gap:7px;color:#8ea5d7;font-size:9px;border-top:1px solid #272e3d;padding-top:16px}
 .signed-in-bar{width:min(100%,520px);margin:0 auto;padding:9px 20px;background:#121722;border-bottom:1px solid #252833;display:flex;justify-content:space-between;align-items:center;color:#aab5ca;font-size:10px}.signed-in-bar button{border:1px solid #34415a;background:#1a2334;color:#a9c1ff;border-radius:8px;padding:7px 12px;font-size:10px}
+
+.demo-form{display:flex;flex-direction:column;gap:9px;margin-top:18px}
+.demo-form label{font-size:11px;color:#c7cede;font-weight:600;margin-top:5px}
+.demo-form input{width:100%;border:1px solid #30394b;border-radius:11px;background:#0b0e15;color:#f6f7fb;padding:13px;font:inherit;font-size:13px;outline:none}
+.demo-form input:focus{border-color:#7298ff}
+.demo-form .demo-warning{margin:7px 0 10px}
+.demo-form .auth-error{margin:4px 0 0}
+.primary-button:disabled{opacity:.6;cursor:wait}
+.wallet-error{padding:12px 14px;margin:-8px 0 18px;border:1px solid #70414a;border-radius:12px;background:#301e25;color:#ffbdc5;font-size:11px;line-height:1.5}
+.empty-state{padding:15px 0}
