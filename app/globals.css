@@ -134,3 +134,7 @@ footer { color:#5f6675;font-size:9px;letter-spacing:1px;margin-top:35px;display:
 .stats-bar{width:9px;min-height:0;border-radius:5px 5px 2px 2px}
 .incoming-bar{background:#54d6a0}.outgoing-bar{background:#789aff}
 .stats-caption{font-size:9px;margin-top:12px}
+\n
+.history-heading-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.history-heading-actions .link-button{white-space:nowrap}
+.history-heading-actions .link-button:disabled{opacity:.4;cursor:not-allowed}
