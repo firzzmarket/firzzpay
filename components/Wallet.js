@@ -13,10 +13,17 @@ const money = (n) => new Intl.NumberFormat("id-ID", {
 }).format(Number(n || 0));
 
 const transactionCategory = (title) => {
-  const match = String(title || "").match(/^\\[([^\\]]+)\\]\\s*/);
-  return match ? match[1] : "";
+  const text = String(title || "");
+  if (!text.startsWith("[")) return "";
+  const end = text.indexOf("]");
+  return end > 1 ? text.slice(1, end) : "";
 };
-const transactionTitle = (title) => String(title || "").replace(/^\\[[^\\]]+\\]\\s*/, "");
+const transactionTitle = (title) => {
+  const text = String(title || "");
+  if (!text.startsWith("[")) return text;
+  const end = text.indexOf("]");
+  return end > 1 ? text.slice(end + 1).trim() : text;
+};
 
 const dateLabel = (value) => new Intl.DateTimeFormat("id-ID", {
   day: "2-digit", month: "short", year: "numeric",
