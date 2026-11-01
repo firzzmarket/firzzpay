@@ -83,3 +83,16 @@ footer { color:#5f6675;font-size:9px;letter-spacing:1px;margin-top:35px;display:
 .primary-button:disabled{opacity:.6;cursor:wait}
 .wallet-error{padding:12px 14px;margin:-8px 0 18px;border:1px solid #70414a;border-radius:12px;background:#301e25;color:#ffbdc5;font-size:11px;line-height:1.5}
 .empty-state{padding:15px 0}
+
+
+.profile-edit-form{display:flex;flex-direction:column;gap:9px;padding:15px 0;border-bottom:1px solid var(--line)}
+.profile-edit-form label{font-size:11px;color:#c7cede;font-weight:600}
+.profile-edit-form input{width:100%;border:1px solid #30394b;border-radius:10px;background:#0b0e15;color:#f6f7fb;padding:12px;font:inherit;font-size:12px}
+.profile-edit-actions{display:flex;gap:8px;justify-content:flex-end}
+.profile-edit-actions button{border:1px solid #34415a;background:#1a2334;color:#b7caff;border-radius:9px;padding:9px 12px;font-size:11px}
+.profile-edit-actions button[type=submit]{background:#4779ec;color:white;border-color:#4779ec}
+.profile-edit-actions button:disabled{opacity:.6}
+.settings-button{width:100%;border-top:0;border-left:0;border-right:0;text-align:left;background:transparent;cursor:pointer}
+.qr-demo-code{width:190px;height:190px;margin:20px auto;padding:12px;background:white;border:8px solid white;border-radius:8px;display:grid;grid-template-columns:repeat(9,1fr);grid-template-rows:repeat(9,1fr);gap:3px;background-color:white;background-image:repeating-conic-gradient(#111 0% 25%,white 0% 50%);background-size:22px 22px;position:relative}
+.qr-demo-code span{background:#111;min-width:0}
+.qr-demo-code span:nth-child(1),.qr-demo-code span:nth-child(2),.qr-demo-code span:nth-child(4),.qr-demo-code span:nth-child(5),.qr-demo-code span:nth-child(7),.qr-demo-code span:nth-child(9){background:white}
