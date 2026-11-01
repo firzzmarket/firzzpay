@@ -30,6 +30,10 @@ export default function WalletApp() {
   const [description, setDescription] = useState("");
   const [error, setError] = useState("");
   const [email, setEmail] = useState("");
+  const [displayName, setDisplayName] = useState("Pengguna FirzzPay");
+  const [profileDraft, setProfileDraft] = useState("");
+  const [profileEditing, setProfileEditing] = useState(false);
+  const [profileSaving, setProfileSaving] = useState(false);
 
   const supabase = getSupabase();
 
@@ -43,6 +47,9 @@ export default function WalletApp() {
       return;
     }
     setEmail(userData.user.email || "");
+    const savedName = userData.user.user_metadata?.display_name || "Pengguna FirzzPay";
+    setDisplayName(savedName);
+    setProfileDraft(savedName);
     const { data: wallet, error: walletError } = await supabase
       .from("wallets").select("balance").eq("user_id", userData.user.id).maybeSingle();
     if (walletError) {
@@ -81,13 +88,32 @@ export default function WalletApp() {
 
   function openAction(action) {
     if (action === "Riwayat") setTab("Aktivitas");
-    else if (action === "QR Pay") setNotice("QR Pay belum diaktifkan pada versi demo.");
+    else if (action === "QR Pay") setModal("QR Pay");
     else {
       setModal(action);
       setAmount("25000");
       setDescription("");
       setError("");
     }
+  }
+
+  async function saveProfile(e) {
+    e.preventDefault();
+    const cleanName = profileDraft.trim();
+    if (!cleanName || cleanName.length > 30) {
+      setError("Nama harus diisi dan maksimal 30 karakter.");
+      return;
+    }
+    setProfileSaving(true);
+    setError("");
+    const { error: updateError } = await supabase.auth.updateUser({ data: { display_name: cleanName } });
+    if (updateError) setError(updateError.message || "Nama belum berhasil disimpan.");
+    else {
+      setDisplayName(cleanName);
+      setProfileEditing(false);
+      setNotice("Profil berhasil diperbarui.");
+    }
+    setProfileSaving(false);
   }
 
   async function submitDemoTransaction(e) {
@@ -124,7 +150,7 @@ export default function WalletApp() {
           <span className="brand-mark"><Wallet size={21} /></span>
           <span>FIRZZ<span className="brand-light">PAY</span></span>
         </a>
-        <button className="icon-button" aria-label="Notifikasi" onClick={() => setNotice("Belum ada notifikasi.")}>
+        <button className="icon-button" aria-label="Notifikasi" onClick={() => setNotice(transactions.length ? `Ada ${transactions.length} catatan transaksi di riwayat akunmu.` : "Belum ada aktivitas baru.")}>
           <Bell size={19} /><i />
         </button>
       </header>
@@ -132,7 +158,7 @@ export default function WalletApp() {
       <section className="welcome">
         <div>
           <p className="eyebrow">DOMPET DIGITAL DEMO</p>
-          <h1>Halo, Pengguna 👋</h1>
+          <h1>Halo, {displayName} 👋</h1>
           <p className="muted">Selamat datang di FirzzPay.</p>
         </div>
         <span className="secure-pill"><ShieldCheck size={13} /> Demo aman</span>
@@ -194,8 +220,9 @@ export default function WalletApp() {
       {tab === "Profil" && <section className="section page-section">
         <p className="eyebrow">AKUN</p><h2>Profil pengguna</h2>
         <div className="profile-card">
-          <div className="avatar">F</div><div><b>Pengguna FirzzPay</b><p className="muted">{email}</p></div>
+          <div className="avatar">{(displayName[0] || "F").toUpperCase()}</div><div><b>{displayName}</b><p className="muted">{email}</p></div>
         </div>
+        {profileEditing ? <form className="profile-edit-form" onSubmit={saveProfile}><label>Nama tampilan</label><input value={profileDraft} maxLength={30} onChange={e => setProfileDraft(e.target.value)} placeholder="Nama kamu" required/><div className="profile-edit-actions"><button type="button" onClick={() => {setProfileEditing(false);setProfileDraft(displayName);setError("");}}>Batal</button><button type="submit" disabled={profileSaving}>{profileSaving ? "Menyimpan..." : "Simpan nama"}</button></div>{error && <p className="auth-error">{error}</p>}</form> : <button className="settings-row settings-button" onClick={() => {setProfileEditing(true);setProfileDraft(displayName);}}><UserRound size={18}/><span>Edit nama profil</span><ChevronRight size={17}/></button>}
         <div className="settings-row"><ShieldCheck size={18}/><span>Keamanan akun</span><ChevronRight size={17}/></div>
         <div className="settings-row"><CircleHelp size={18}/><span>Pusat bantuan</span><ChevronRight size={17}/></div>
         <p className="muted small">Akun demo FirzzPay. Jangan gunakan saldo simulasi sebagai alat pembayaran.</p>
@@ -216,7 +243,7 @@ export default function WalletApp() {
       {modal && <div className="modal-backdrop" onClick={() => !saving && setModal("")}>
         <div className="modal" onClick={(e) => e.stopPropagation()}>
           <button className="close-button" disabled={saving} onClick={() => setModal("")}><X size={19}/></button>
-          <span className="modal-icon"><Sparkles size={22}/></span>
+          {modal === "QR Pay" ? <><span className="modal-icon"><QrCode size={22}/></span><p className="eyebrow">QR PAY SIMULASI</p><h2>QR pembayaran demo</h2><p className="muted">Ini hanya tampilan contoh. Kode ini tidak dapat dipindai dan tidak menerima pembayaran.</p><div className="qr-demo-code" aria-label="Ilustrasi QR demo"><span/><span/><span/><span/><span/><span/><span/><span/><span/></div><div className="demo-warning">QR tidak aktif · Jangan gunakan untuk transaksi sungguhan.</div><button className="primary-button" onClick={() => setModal("")}>Mengerti</button></> : <><span className="modal-icon"><Sparkles size={22}/></span>
           <p className="eyebrow">TRANSAKSI SIMULASI</p>
           <h2>{modal} Demo</h2>
           <p className="muted">{modal === "Top Up" ? "Nominal akan ditambahkan ke saldo demo akun ini." : "Nominal akan dikurangi dari saldo demo akun ini. Tidak ada uang yang dikirim ke orang lain."}</p>
@@ -228,7 +255,7 @@ export default function WalletApp() {
             {error && <p className="auth-error">{error}</p>}
             <div className="demo-warning">Hanya simulasi. Tidak melibatkan uang atau pembayaran sungguhan.</div>
             <button className="primary-button" disabled={saving || loading}>{saving ? "Memproses..." : "Konfirmasi simulasi"}</button>
-          </form>
+          </form></>}
         </div>
       </div>}
 
