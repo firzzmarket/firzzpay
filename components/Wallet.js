@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import {
   ArrowDownLeft, ArrowUpRight, QrCode, Clock3, Bell, Wallet,
   Home, Activity, UserRound, ShieldCheck, Plus, ChevronRight,
-  CircleHelp, X, Sparkles, RefreshCw
+  CircleHelp, X, Sparkles, RefreshCw, Download
 } from "lucide-react";
 import { getSupabase } from "../lib/supabase";
 
@@ -150,6 +150,38 @@ export default function WalletApp() {
     setProfileSaving(false);
   }
 
+  function exportHistoryCsv() {
+    if (!filteredTransactions.length) {
+      setNotice("Tidak ada catatan untuk diekspor.");
+      return;
+    }
+    const columns = ["Tanggal", "Keterangan", "Jenis", "Nominal", "Status", "ID Catatan"];
+    const safeCell = (value) => {
+      const text = String(value ?? "");
+      const protectedText = /^[=+@\\-]/.test(text) ? "'" + text : text;
+      return '"' + protectedText.replace(/"/g, '""') + '"';
+    };
+    const rows = filteredTransactions.map((tx) => [
+      dateLabel(tx.created_at),
+      tx.title,
+      tx.type === "in" ? "Uang masuk (simulasi)" : "Uang keluar (simulasi)",
+      tx.amount,
+      tx.status,
+      tx.id
+    ]);
+    const csv = "\\uFEFF" + [columns, ...rows].map((row) => row.map(safeCell).join(",")).join("\\r\\n");
+    const file = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(file);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "firzzpay-riwayat-demo.csv";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+    setNotice("File CSV riwayat demo berhasil disiapkan.");
+  }
+
   async function submitDemoTransaction(e) {
     e.preventDefault();
     setSaving(true);
@@ -266,7 +298,10 @@ export default function WalletApp() {
       {tab === "Aktivitas" && <section className="section page-section">
         <div className="section-heading">
           <div><p className="eyebrow">CATATAN AKUN</p><h2>Riwayat transaksi</h2></div>
-          <button className="link-button" onClick={loadWallet}><RefreshCw size={14}/> Muat ulang</button>
+          <div className="history-heading-actions">
+            <button className="link-button" onClick={exportHistoryCsv} disabled={!filteredTransactions.length}><Download size={14}/> Ekspor CSV</button>
+            <button className="link-button" onClick={loadWallet}><RefreshCw size={14}/> Muat ulang</button>
+          </div>
         </div>
         <p className="muted">Riwayat tersimpan untuk akun yang sedang login.</p>
         <div className="history-filters">
