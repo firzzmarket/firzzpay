@@ -1,5 +1,5 @@
-import Wallet from "../components/Wallet";
+import AuthGate from "../components/AuthGate";
 
 export default function Home() {
-  return <Wallet />;
+  return <AuthGate />;
 }
