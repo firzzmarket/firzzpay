@@ -96,3 +96,17 @@ footer { color:#5f6675;font-size:9px;letter-spacing:1px;margin-top:35px;display:
 .qr-demo-code{width:190px;height:190px;margin:20px auto;padding:12px;background:white;border:8px solid white;border-radius:8px;display:grid;grid-template-columns:repeat(9,1fr);grid-template-rows:repeat(9,1fr);gap:3px;background-color:white;background-image:repeating-conic-gradient(#111 0% 25%,white 0% 50%);background-size:22px 22px;position:relative}
 .qr-demo-code span{background:#111;min-width:0}
 .qr-demo-code span:nth-child(1),.qr-demo-code span:nth-child(2),.qr-demo-code span:nth-child(4),.qr-demo-code span:nth-child(5),.qr-demo-code span:nth-child(7),.qr-demo-code span:nth-child(9){background:white}
+
+
+.transaction-button{width:100%;border:0;border-bottom:1px solid var(--line);background:transparent;color:inherit;text-align:left;cursor:pointer;font:inherit}
+.transaction-button:hover{background:#ffffff08}
+.transaction-button:focus-visible{outline:2px solid #83a6ff;outline-offset:-2px;border-radius:10px}
+.detail-tx-icon{width:52px;height:52px;border-radius:17px;margin-bottom:18px}
+.detail-amount{font-size:27px;font-weight:800;letter-spacing:-.7px;margin:14px 0 22px}
+.detail-rows{border-top:1px solid var(--line);margin:12px 0 18px}
+.detail-rows>div{display:flex;justify-content:space-between;gap:15px;padding:13px 0;border-bottom:1px solid var(--line);font-size:11px}
+.detail-rows span{color:var(--muted)}
+.detail-rows b{text-align:right;max-width:60%;overflow-wrap:anywhere}
+.detail-status{color:#a9c1ff}
+.detail-id{font-variant-numeric:tabular-nums;letter-spacing:1px}
+.transaction-detail-modal{max-height:90vh;overflow-y:auto}
