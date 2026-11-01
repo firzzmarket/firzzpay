@@ -12,6 +12,12 @@ const money = (n) => new Intl.NumberFormat("id-ID", {
   style: "currency", currency: "IDR", maximumFractionDigits: 0
 }).format(Number(n || 0));
 
+const transactionCategory = (title) => {
+  const match = String(title || "").match(/^\\[([^\\]]+)\\]\\s*/);
+  return match ? match[1] : "";
+};
+const transactionTitle = (title) => String(title || "").replace(/^\\[[^\\]]+\\]\\s*/, "");
+
 const dateLabel = (value) => new Intl.DateTimeFormat("id-ID", {
   day: "2-digit", month: "short", year: "numeric",
   hour: "2-digit", minute: "2-digit"
@@ -389,7 +395,7 @@ export default function WalletApp() {
           <button className="close-button" aria-label="Tutup detail" onClick={() => setSelectedTransaction(null)}><X size={19}/></button>
           <span className={selectedTransaction.type === "in" ? "tx-icon incoming detail-tx-icon" : "tx-icon outgoing detail-tx-icon"}>{selectedTransaction.type === "in" ? <ArrowDownLeft size={22}/> : <ArrowUpRight size={22}/>}</span>
           <p className="eyebrow">DETAIL TRANSAKSI</p>
-          <h2>{selectedTransaction.title}</h2>
+          <h2>{transactionTitle(selectedTransaction.title)}</h2>
           <div className={selectedTransaction.type === "in" ? "detail-amount positive" : "detail-amount"}>{selectedTransaction.type === "in" ? "+" : "-"}{money(selectedTransaction.amount)}</div>
           <div className="detail-rows">
             <div><span>Jenis transaksi</span><b>{selectedTransaction.type === "in" ? "Uang masuk (simulasi)" : "Uang keluar (simulasi)"}</b></div>
@@ -436,7 +442,7 @@ function TransactionList({ items, onSelect }) {
         <span className={tx.type === "in" ? "tx-icon incoming" : "tx-icon outgoing"}>
           {tx.type === "in" ? <ArrowDownLeft size={19}/> : <ArrowUpRight size={19}/>}
         </span>
-        <div className="tx-info"><b>{tx.title}</b><span>{dateLabel(tx.created_at)} · {tx.status}</span></div>
+        <div className="tx-info"><b>{transactionTitle(tx.title)}</b><span>{transactionCategory(tx.title) ? `${transactionCategory(tx.title)} · ` : ""}{dateLabel(tx.created_at)} · {tx.status}</span></div>
         <strong className={tx.type === "in" ? "positive" : ""}>{tx.type === "in" ? "+" : "-"}{money(tx.amount)}</strong>
       </button>
     ))}
