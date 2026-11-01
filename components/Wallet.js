@@ -34,6 +34,7 @@ export default function WalletApp() {
   const [profileDraft, setProfileDraft] = useState("");
   const [profileEditing, setProfileEditing] = useState(false);
   const [profileSaving, setProfileSaving] = useState(false);
+  const [selectedTransaction, setSelectedTransaction] = useState(null);
 
   const supabase = getSupabase();
 
@@ -197,7 +198,7 @@ export default function WalletApp() {
             <div><p className="eyebrow">RINGKASAN</p><h2>Aktivitas terbaru</h2></div>
             <button className="link-button" onClick={() => setTab("Aktivitas")}>Lihat semua <ChevronRight size={15} /></button>
           </div>
-          {loading ? <p className="muted">Memuat riwayat...</p> : <TransactionList items={transactions.slice(0, 4)} />}
+          {loading ? <p className="muted">Memuat riwayat...</p> : <TransactionList items={transactions.slice(0, 4)} onSelect={setSelectedTransaction} />}
           {!loading && transactions.length === 0 && <p className="muted empty-state">Belum ada transaksi. Coba Top Up demo untuk membuat catatan pertama.</p>}
         </section>
 
@@ -213,7 +214,7 @@ export default function WalletApp() {
           <button className="link-button" onClick={loadWallet}><RefreshCw size={14}/> Muat ulang</button>
         </div>
         <p className="muted">Riwayat tersimpan untuk akun yang sedang login.</p>
-        {loading ? <p className="muted">Memuat riwayat...</p> : <TransactionList items={transactions} />}
+        {loading ? <p className="muted">Memuat riwayat...</p> : <TransactionList items={transactions} onSelect={setSelectedTransaction} />}
         {!loading && transactions.length === 0 && <p className="muted empty-state">Belum ada transaksi.</p>}
       </section>}
 
@@ -240,6 +241,24 @@ export default function WalletApp() {
         ))}
       </nav>
 
+      {selectedTransaction && <div className="modal-backdrop" onClick={() => setSelectedTransaction(null)}>
+        <div className="modal transaction-detail-modal" onClick={(e) => e.stopPropagation()}>
+          <button className="close-button" aria-label="Tutup detail" onClick={() => setSelectedTransaction(null)}><X size={19}/></button>
+          <span className={selectedTransaction.type === "in" ? "tx-icon incoming detail-tx-icon" : "tx-icon outgoing detail-tx-icon"}>{selectedTransaction.type === "in" ? <ArrowDownLeft size={22}/> : <ArrowUpRight size={22}/>}</span>
+          <p className="eyebrow">DETAIL TRANSAKSI</p>
+          <h2>{selectedTransaction.title}</h2>
+          <div className={selectedTransaction.type === "in" ? "detail-amount positive" : "detail-amount"}>{selectedTransaction.type === "in" ? "+" : "-"}{money(selectedTransaction.amount)}</div>
+          <div className="detail-rows">
+            <div><span>Jenis transaksi</span><b>{selectedTransaction.type === "in" ? "Uang masuk (simulasi)" : "Uang keluar (simulasi)"}</b></div>
+            <div><span>Tanggal</span><b>{dateLabel(selectedTransaction.created_at)}</b></div>
+            <div><span>Status</span><b className="detail-status">{selectedTransaction.status}</b></div>
+            <div><span>Nomor catatan</span><b className="detail-id">{String(selectedTransaction.id).slice(0, 8).toUpperCase()}</b></div>
+          </div>
+          <div className="demo-warning">Catatan ini hanya transaksi simulasi dan bukan bukti pembayaran.</div>
+          <button className="primary-button" onClick={() => setSelectedTransaction(null)}>Tutup detail</button>
+        </div>
+      </div>}
+
       {modal && <div className="modal-backdrop" onClick={() => !saving && setModal("")}>
         <div className="modal" onClick={(e) => e.stopPropagation()}>
           <button className="close-button" disabled={saving} onClick={() => setModal("")}><X size={19}/></button>
@@ -265,17 +284,17 @@ export default function WalletApp() {
   );
 }
 
-function TransactionList({ items }) {
+function TransactionList({ items, onSelect }) {
   if (!items.length) return null;
   return <div className="transaction-list">
     {items.map((tx) => (
-      <div className="transaction" key={tx.id}>
+      <button className="transaction transaction-button" key={tx.id} onClick={() => onSelect?.(tx)} aria-label={`Lihat detail ${tx.title}`}>
         <span className={tx.type === "in" ? "tx-icon incoming" : "tx-icon outgoing"}>
           {tx.type === "in" ? <ArrowDownLeft size={19}/> : <ArrowUpRight size={19}/>}
         </span>
         <div className="tx-info"><b>{tx.title}</b><span>{dateLabel(tx.created_at)} · {tx.status}</span></div>
         <strong className={tx.type === "in" ? "positive" : ""}>{tx.type === "in" ? "+" : "-"}{money(tx.amount)}</strong>
-      </div>
+      </button>
     ))}
   </div>;
 }
