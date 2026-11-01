@@ -1,27 +1,76 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   ArrowDownLeft, ArrowUpRight, QrCode, Clock3, Bell, Wallet,
   Home, Activity, UserRound, ShieldCheck, Plus, ChevronRight,
-  CircleHelp, X, Sparkles
+  CircleHelp, X, Sparkles, RefreshCw
 } from "lucide-react";
+import { getSupabase } from "../lib/supabase";
 
 const money = (n) => new Intl.NumberFormat("id-ID", {
   style: "currency", currency: "IDR", maximumFractionDigits: 0
-}).format(n);
+}).format(Number(n || 0));
 
-const transactions = [
-  { id: "FP-DEMO-003", title: "Contoh Top Up", date: "Hari ini · 09.15", amount: 100000, type: "in", status: "SIMULASI" },
-  { id: "FP-DEMO-002", title: "Contoh pembayaran", date: "Kemarin · 16.40", amount: -25000, type: "out", status: "SIMULASI" },
-  { id: "FP-DEMO-001", title: "Contoh Top Up", date: "30 Okt · 11.20", amount: 50000, type: "in", status: "SIMULASI" }
-];
+const dateLabel = (value) => new Intl.DateTimeFormat("id-ID", {
+  day: "2-digit", month: "short", year: "numeric",
+  hour: "2-digit", minute: "2-digit"
+}).format(new Date(value));
 
 export default function WalletApp() {
   const [tab, setTab] = useState("Beranda");
   const [modal, setModal] = useState("");
   const [showBalance, setShowBalance] = useState(true);
   const [notice, setNotice] = useState("");
+  const [balance, setBalance] = useState(null);
+  const [transactions, setTransactions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [amount, setAmount] = useState("25000");
+  const [description, setDescription] = useState("");
+  const [error, setError] = useState("");
+  const [email, setEmail] = useState("");
+
+  const supabase = getSupabase();
+
+  const loadWallet = useCallback(async () => {
+    setLoading(true);
+    setError("");
+    const { data: userData, error: userError } = await supabase.auth.getUser();
+    if (userError || !userData.user) {
+      setError("Sesi login tidak ditemukan. Silakan masuk kembali.");
+      setLoading(false);
+      return;
+    }
+    setEmail(userData.user.email || "");
+    const { data: wallet, error: walletError } = await supabase
+      .from("wallets").select("balance").eq("user_id", userData.user.id).maybeSingle();
+    if (walletError) {
+      setError("Database belum disiapkan. Jalankan SQL FirzzPay di Supabase terlebih dahulu.");
+      setLoading(false);
+      return;
+    }
+    if (!wallet) {
+      setError("Dompet demo belum tersedia. Muat ulang halaman beberapa saat lagi.");
+      setLoading(false);
+      return;
+    }
+    const { data: rows, error: txError } = await supabase
+      .from("wallet_transactions")
+      .select("id,title,amount,type,status,created_at")
+      .eq("user_id", userData.user.id)
+      .order("created_at", { ascending: false })
+      .limit(30);
+    if (txError) {
+      setError("Riwayat belum dapat dimuat. Periksa kebijakan tabel Supabase.");
+    } else {
+      setBalance(Number(wallet.balance));
+      setTransactions(rows || []);
+    }
+    setLoading(false);
+  }, [supabase]);
+
+  useEffect(() => { loadWallet(); }, [loadWallet]);
 
   const actions = [
     { label: "Top Up", icon: Plus },
@@ -32,7 +81,40 @@ export default function WalletApp() {
 
   function openAction(action) {
     if (action === "Riwayat") setTab("Aktivitas");
-    else setModal(action);
+    else if (action === "QR Pay") setNotice("QR Pay belum diaktifkan pada versi demo.");
+    else {
+      setModal(action);
+      setAmount("25000");
+      setDescription("");
+      setError("");
+    }
+  }
+
+  async function submitDemoTransaction(e) {
+    e.preventDefault();
+    setSaving(true);
+    setError("");
+    const numericAmount = Number(amount);
+    if (!Number.isSafeInteger(numericAmount) || numericAmount < 1000 || numericAmount > 1000000) {
+      setError("Masukkan nominal Rp1.000 sampai Rp1.000.000.");
+      setSaving(false);
+      return;
+    }
+    const type = modal === "Top Up" ? "in" : "out";
+    const { error: rpcError } = await supabase.rpc("apply_demo_transaction", {
+      p_type: type,
+      p_amount: numericAmount,
+      p_description: description.trim() || (type === "in" ? "Top Up Demo" : "Transfer Demo")
+    });
+    if (rpcError) {
+      setError(rpcError.message || "Transaksi demo gagal diproses.");
+      setSaving(false);
+      return;
+    }
+    setModal("");
+    setNotice("Transaksi simulasi berhasil dicatat.");
+    await loadWallet();
+    setSaving(false);
   }
 
   return (
@@ -56,6 +138,8 @@ export default function WalletApp() {
         <span className="secure-pill"><ShieldCheck size={13} /> Demo aman</span>
       </section>
 
+      {error && !modal && <div className="wallet-error" role="alert">{error}</div>}
+
       {tab === "Beranda" && <>
         <section className="balance-card">
           <div className="balance-top">
@@ -64,9 +148,11 @@ export default function WalletApp() {
               {showBalance ? "Sembunyikan" : "Tampilkan"}
             </button>
           </div>
-          <div className="balance-amount">{showBalance ? money(500000) : "••••••••"}</div>
+          <div className="balance-amount">
+            {loading ? "Memuat..." : showBalance ? money(balance) : "••••••••"}
+          </div>
           <div className="balance-foot">
-            <span>Saldo contoh · bukan uang sungguhan</span>
+            <span>Saldo simulasi · bukan uang sungguhan</span>
             <span className="demo-tag">SIMULASI</span>
           </div>
         </section>
@@ -85,29 +171,34 @@ export default function WalletApp() {
             <div><p className="eyebrow">RINGKASAN</p><h2>Aktivitas terbaru</h2></div>
             <button className="link-button" onClick={() => setTab("Aktivitas")}>Lihat semua <ChevronRight size={15} /></button>
           </div>
-          <TransactionList items={transactions} />
+          {loading ? <p className="muted">Memuat riwayat...</p> : <TransactionList items={transactions.slice(0, 4)} />}
+          {!loading && transactions.length === 0 && <p className="muted empty-state">Belum ada transaksi. Coba Top Up demo untuk membuat catatan pertama.</p>}
         </section>
 
         <section className="notice-card">
           <span className="notice-icon"><ShieldCheck size={20} /></span>
-          <div><b>Keamanan adalah prioritas</b><p>FirzzPay masih tahap demo. Jangan gunakan untuk menyimpan atau mengirim uang sungguhan.</p></div>
+          <div><b>Keamanan adalah prioritas</b><p>FirzzPay masih tahap demo. Saldo dan transaksi hanya simulasi, bukan uang sungguhan.</p></div>
         </section>
       </>}
 
       {tab === "Aktivitas" && <section className="section page-section">
-        <p className="eyebrow">CATATAN AKUN</p><h2>Riwayat transaksi</h2>
-        <p className="muted">Semua data berikut hanya contoh untuk pengembangan.</p>
-        <TransactionList items={transactions} />
+        <div className="section-heading">
+          <div><p className="eyebrow">CATATAN AKUN</p><h2>Riwayat transaksi</h2></div>
+          <button className="link-button" onClick={loadWallet}><RefreshCw size={14}/> Muat ulang</button>
+        </div>
+        <p className="muted">Riwayat tersimpan untuk akun yang sedang login.</p>
+        {loading ? <p className="muted">Memuat riwayat...</p> : <TransactionList items={transactions} />}
+        {!loading && transactions.length === 0 && <p className="muted empty-state">Belum ada transaksi.</p>}
       </section>}
 
       {tab === "Profil" && <section className="section page-section">
         <p className="eyebrow">AKUN</p><h2>Profil pengguna</h2>
         <div className="profile-card">
-          <div className="avatar">F</div><div><b>Pengguna Demo</b><p className="muted">demo@firzzpay.test</p></div>
+          <div className="avatar">F</div><div><b>Pengguna FirzzPay</b><p className="muted">{email}</p></div>
         </div>
         <div className="settings-row"><ShieldCheck size={18}/><span>Keamanan akun</span><ChevronRight size={17}/></div>
         <div className="settings-row"><CircleHelp size={18}/><span>Pusat bantuan</span><ChevronRight size={17}/></div>
-        <p className="muted small">Profil demo. Login dan pengelolaan akun akan ditambahkan pada tahap berikutnya.</p>
+        <p className="muted small">Akun demo FirzzPay. Jangan gunakan saldo simulasi sebagai alat pembayaran.</p>
       </section>}
 
       <nav className="bottom-nav">
@@ -122,33 +213,41 @@ export default function WalletApp() {
         ))}
       </nav>
 
-      {modal && <div className="modal-backdrop" onClick={() => setModal("")}>
+      {modal && <div className="modal-backdrop" onClick={() => !saving && setModal("")}>
         <div className="modal" onClick={(e) => e.stopPropagation()}>
-          <button className="close-button" onClick={() => setModal("")}><X size={19}/></button>
+          <button className="close-button" disabled={saving} onClick={() => setModal("")}><X size={19}/></button>
           <span className="modal-icon"><Sparkles size={22}/></span>
-          <p className="eyebrow">FITUR DALAM PENGEMBANGAN</p>
-          <h2>{modal}</h2>
-          <p className="muted">Fitur {modal} akan dihubungkan ke penyedia pembayaran resmi setelah proses kelayakan, akun mitra, dan pengujian sandbox selesai.</p>
-          <div className="demo-warning">Belum tersedia untuk transaksi uang sungguhan.</div>
-          <button className="primary-button" onClick={() => setModal("")}>Mengerti</button>
+          <p className="eyebrow">TRANSAKSI SIMULASI</p>
+          <h2>{modal} Demo</h2>
+          <p className="muted">{modal === "Top Up" ? "Nominal akan ditambahkan ke saldo demo akun ini." : "Nominal akan dikurangi dari saldo demo akun ini. Tidak ada uang yang dikirim ke orang lain."}</p>
+          <form className="demo-form" onSubmit={submitDemoTransaction}>
+            <label>Nominal (Rp)</label>
+            <input type="number" min="1000" max="1000000" step="1000" required value={amount} onChange={e => setAmount(e.target.value)} />
+            <label>Keterangan (opsional)</label>
+            <input type="text" maxLength="60" value={description} onChange={e => setDescription(e.target.value)} placeholder={modal === "Top Up" ? "Top Up Demo" : "Transfer Demo"} />
+            {error && <p className="auth-error">{error}</p>}
+            <div className="demo-warning">Hanya simulasi. Tidak melibatkan uang atau pembayaran sungguhan.</div>
+            <button className="primary-button" disabled={saving || loading}>{saving ? "Memproses..." : "Konfirmasi simulasi"}</button>
+          </form>
         </div>
       </div>}
 
       {notice && <div className="toast" role="status">{notice}<button onClick={() => setNotice("")}>Tutup</button></div>}
-      <footer>FIRZZPAY © 2026 <span>Versi 1.0 · Demo</span></footer>
+      <footer>FIRZZPAY © 2026 <span>Versi 1.1 · Demo</span></footer>
     </main>
   );
 }
 
 function TransactionList({ items }) {
+  if (!items.length) return null;
   return <div className="transaction-list">
     {items.map((tx) => (
       <div className="transaction" key={tx.id}>
         <span className={tx.type === "in" ? "tx-icon incoming" : "tx-icon outgoing"}>
           {tx.type === "in" ? <ArrowDownLeft size={19}/> : <ArrowUpRight size={19}/>}
         </span>
-        <div className="tx-info"><b>{tx.title}</b><span>{tx.date} · {tx.status}</span></div>
-        <strong className={tx.type === "in" ? "positive" : ""}>{tx.amount > 0 ? "+" : ""}{money(tx.amount)}</strong>
+        <div className="tx-info"><b>{tx.title}</b><span>{dateLabel(tx.created_at)} · {tx.status}</span></div>
+        <strong className={tx.type === "in" ? "positive" : ""}>{tx.type === "in" ? "+" : "-"}{money(tx.amount)}</strong>
       </div>
     ))}
   </div>;
