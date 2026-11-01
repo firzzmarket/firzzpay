@@ -38,9 +38,6 @@ export default function WalletApp() {
   const [historySearch, setHistorySearch] = useState("");
   const [historyType, setHistoryType] = useState("all");
   const [historyDate, setHistoryDate] = useState("all");
-  const [historySearch, setHistorySearch] = useState("");
-  const [historyType, setHistoryType] = useState("all");
-  const [historyDate, setHistoryDate] = useState("all");
 
   const supabase = getSupabase();
 
@@ -93,18 +90,6 @@ export default function WalletApp() {
     const txDate = new Date(tx.created_at);
     const now = new Date();
     const matchesDate = historyDate === "all" || (historyDate === "today" && txDate.toDateString() === now.toDateString()) || (historyDate === "week" && (now - txDate) <= 7 * 86400000 && txDate <= now) || (historyDate === "month" && txDate.getMonth() === now.getMonth() && txDate.getFullYear() === now.getFullYear());
-    return matchesSearch && matchesType && matchesDate;
-  });
-
-  const filteredTransactions = transactions.filter((tx) => {
-    const query = historySearch.trim().toLowerCase();
-    const text = String(tx.title || "") + " " + String(tx.status || "") + " " + String(tx.id || "");
-    const txDate = new Date(tx.created_at);
-    const now = new Date();
-    const age = now.getTime() - txDate.getTime();
-    const matchesSearch = !query || text.toLowerCase().includes(query);
-    const matchesType = historyType === "all" || tx.type === historyType;
-    const matchesDate = historyDate === "all" || (historyDate === "today" && txDate.toDateString() === now.toDateString()) || (historyDate === "week" && age >= 0 && age <= 7 * 86400000) || (historyDate === "month" && txDate.getMonth() === now.getMonth() && txDate.getFullYear() === now.getFullYear());
     return matchesSearch && matchesType && matchesDate;
   });
 
