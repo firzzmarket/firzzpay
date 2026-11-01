@@ -35,6 +35,9 @@ export default function WalletApp() {
   const [profileEditing, setProfileEditing] = useState(false);
   const [profileSaving, setProfileSaving] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState(null);
+  const [historySearch, setHistorySearch] = useState("");
+  const [historyType, setHistoryType] = useState("all");
+  const [historyDate, setHistoryDate] = useState("all");
 
   const supabase = getSupabase();
 
@@ -79,6 +82,16 @@ export default function WalletApp() {
   }, [supabase]);
 
   useEffect(() => { loadWallet(); }, [loadWallet]);
+
+  const filteredTransactions = transactions.filter((tx) => {
+    const query = historySearch.trim().toLocaleLowerCase("id-ID");
+    const matchesSearch = !query || String(tx.title || "").toLocaleLowerCase("id-ID").includes(query) || String(tx.status || "").toLocaleLowerCase("id-ID").includes(query) || String(tx.id || "").toLowerCase().includes(query);
+    const matchesType = historyType === "all" || tx.type === historyType;
+    const txDate = new Date(tx.created_at);
+    const now = new Date();
+    const matchesDate = historyDate === "all" || (historyDate === "today" && txDate.toDateString() === now.toDateString()) || (historyDate === "week" && (now - txDate) <= 7 * 86400000 && txDate <= now) || (historyDate === "month" && txDate.getMonth() === now.getMonth() && txDate.getFullYear() === now.getFullYear());
+    return matchesSearch && matchesType && matchesDate;
+  });
 
   const actions = [
     { label: "Top Up", icon: Plus },
