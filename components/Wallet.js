@@ -146,6 +146,16 @@ export default function WalletApp() {
     return tx.type === "out" && date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
   }).reduce((sum, tx) => sum + Number(tx.amount || 0), 0);
   const budgetPercent = Math.min(100, Math.round(currentMonthExpenses / Math.max(1, monthlyBudget) * 100));
+  const categoryStats = ["Makanan", "Transportasi", "Belanja", "Tagihan", "Hiburan", "Pendidikan", "Kesehatan", "Lainnya"]
+    .map((category) => ({
+      category,
+      total: transactions.filter((tx) => tx.type === "out" && transactionCategory(tx.title) === category).reduce((sum, tx) => sum + Number(tx.amount || 0), 0),
+      count: transactions.filter((tx) => tx.type === "out" && transactionCategory(tx.title) === category).length
+    }))
+    .filter((item) => item.total > 0)
+    .sort((a, b) => b.total - a.total);
+  const highestCategoryTotal = Math.max(1, ...categoryStats.map((item) => item.total));
+
 
   function saveMonthlyBudget(e) {
     e.preventDefault();
@@ -351,6 +361,22 @@ export default function WalletApp() {
         <section className="notice-card">
           <span className="notice-icon"><ShieldCheck size={20} /></span>
           <div><b>Keamanan adalah prioritas</b><p>FirzzPay masih tahap demo. Saldo dan transaksi hanya simulasi, bukan uang sungguhan.</p></div>
+        </section>
+        <section className="section category-stats-card">
+          <div className="section-heading">
+            <div><p className="eyebrow">RINCIAN PENGELUARAN</p><h2>Per kategori</h2></div>
+            <span className="muted small">30 catatan terakhir</span>
+          </div>
+          {categoryStats.length ? <div className="category-stats-list">
+            {categoryStats.map((item) => (
+              <div className="category-stat" key={item.category}>
+                <div className="category-stat-heading"><b>{item.category}</b><span>{money(item.total)}</span></div>
+                <div className="budget-track"><span style={{width: `${item.total / highestCategoryTotal * 100}%`}} /></div>
+                <p className="muted small">{item.count} transaksi simulasi</p>
+              </div>
+            ))}
+          </div> : <p className="muted empty-state">Belum ada pengeluaran berkategori. Buat Transfer Demo untuk melihat ringkasan kategori.</p>}
+          <p className="muted stats-caption">Hanya menghitung transaksi uang keluar berkategori dari 30 catatan terakhir yang dimuat.</p>
         </section>
       </>}
 
