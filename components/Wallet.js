@@ -38,6 +38,9 @@ export default function WalletApp() {
   const [historySearch, setHistorySearch] = useState("");
   const [historyType, setHistoryType] = useState("all");
   const [historyDate, setHistoryDate] = useState("all");
+  const [selectedCategory, setSelectedCategory] = useState("Lainnya");
+  const [monthlyBudget, setMonthlyBudget] = useState(200000);
+  const [budgetDraft, setBudgetDraft] = useState("200000");
 
   const supabase = getSupabase();
 
@@ -83,6 +86,16 @@ export default function WalletApp() {
 
   useEffect(() => { loadWallet(); }, [loadWallet]);
 
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem("firzzpay-demo-monthly-budget");
+      if (saved && Number.isSafeInteger(Number(saved)) && Number(saved) >= 1000) {
+        setMonthlyBudget(Number(saved));
+        setBudgetDraft(String(saved));
+      }
+    } catch {}
+  }, []);
+
   const filteredTransactions = transactions.filter((tx) => {
     const query = historySearch.trim().toLocaleLowerCase("id-ID");
     const matchesSearch = !query || String(tx.title || "").toLocaleLowerCase("id-ID").includes(query) || String(tx.status || "").toLocaleLowerCase("id-ID").includes(query) || String(tx.id || "").toLowerCase().includes(query);
@@ -112,6 +125,25 @@ export default function WalletApp() {
     };
   });
   const weeklyMax = Math.max(1, ...weeklyStats.map((day) => day.incoming + day.outgoing));
+  const currentMonthExpenses = transactions.filter((tx) => {
+    const date = new Date(tx.created_at);
+    const now = new Date();
+    return tx.type === "out" && date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
+  }).reduce((sum, tx) => sum + Number(tx.amount || 0), 0);
+  const budgetPercent = Math.min(100, Math.round(currentMonthExpenses / Math.max(1, monthlyBudget) * 100));
+
+  function saveMonthlyBudget(e) {
+    e.preventDefault();
+    const value = Number(budgetDraft);
+    if (!Number.isSafeInteger(value) || value < 1000 || value > 100000000) {
+      setNotice("Anggaran harus Rp1.000 sampai Rp100.000.000.");
+      return;
+    }
+    setMonthlyBudget(value);
+    try { window.localStorage.setItem("firzzpay-demo-monthly-budget", String(value)); } catch {}
+    setNotice("Anggaran demo bulanan berhasil disimpan di perangkat ini.");
+  }
+
 
   const actions = [
     { label: "Top Up", icon: Plus },
@@ -196,7 +228,7 @@ export default function WalletApp() {
     const { error: rpcError } = await supabase.rpc("apply_demo_transaction", {
       p_type: type,
       p_amount: numericAmount,
-      p_description: description.trim() || (type === "in" ? "Top Up Demo" : "Transfer Demo")
+      p_description: type === "in" ? (description.trim() || "Top Up Demo") : `[${selectedCategory}] ${description.trim() || "Transfer Demo"}`
     });
     if (rpcError) {
       setError(rpcError.message || "Transaksi demo gagal diproses.");
@@ -256,6 +288,18 @@ export default function WalletApp() {
               <span>{label}</span>
             </button>
           ))}
+        </section>
+
+        <section className="section budget-card">
+          <div className="section-heading"><div><p className="eyebrow">KONTROL PENGELUARAN</p><h2>Anggaran demo bulanan</h2></div></div>
+          <div className="budget-amounts"><b>{money(currentMonthExpenses)}</b><span>dari {money(monthlyBudget)}</span></div>
+          <div className="budget-track"><span style={{width: `${budgetPercent}%`}} /></div>
+          <p className="muted">{budgetPercent}% terpakai bulan ini · berdasarkan catatan uang keluar</p>
+          <form className="budget-form" onSubmit={saveMonthlyBudget}>
+            <label htmlFor="monthly-demo-budget">Atur batas anggaran (Rp)</label>
+            <div><input id="monthly-demo-budget" type="number" min="1000" max="100000000" step="1000" value={budgetDraft} onChange={e => setBudgetDraft(e.target.value)}/><button type="submit">Simpan</button></div>
+          </form>
+          <p className="muted budget-note">Pengaturan anggaran tersimpan di perangkat ini saja. Ini bukan rekening atau uang sungguhan.</p>
         </section>
 
         <section className="section stats-card">
@@ -368,6 +412,7 @@ export default function WalletApp() {
           <form className="demo-form" onSubmit={submitDemoTransaction}>
             <label>Nominal (Rp)</label>
             <input type="number" min="1000" max="1000000" step="1000" required value={amount} onChange={e => setAmount(e.target.value)} />
+            {modal === "Transfer" && <><label>Kategori pengeluaran</label><select className="demo-category-select" value={selectedCategory} onChange={e => setSelectedCategory(e.target.value)}><option>Makanan</option><option>Transportasi</option><option>Belanja</option><option>Tagihan</option><option>Hiburan</option><option>Pendidikan</option><option>Kesehatan</option><option>Lainnya</option></select></>}
             <label>Keterangan (opsional)</label>
             <input type="text" maxLength="60" value={description} onChange={e => setDescription(e.target.value)} placeholder={modal === "Top Up" ? "Top Up Demo" : "Transfer Demo"} />
             {error && <p className="auth-error">{error}</p>}
