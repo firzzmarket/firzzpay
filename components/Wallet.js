@@ -93,6 +93,26 @@ export default function WalletApp() {
     return matchesSearch && matchesType && matchesDate;
   });
 
+  const totalIncoming = transactions.filter((tx) => tx.type === "in").reduce((sum, tx) => sum + Number(tx.amount || 0), 0);
+  const totalOutgoing = transactions.filter((tx) => tx.type === "out").reduce((sum, tx) => sum + Number(tx.amount || 0), 0);
+  const weeklyStats = Array.from({ length: 7 }, (_, index) => {
+    const day = new Date();
+    day.setHours(0, 0, 0, 0);
+    day.setDate(day.getDate() - (6 - index));
+    const nextDay = new Date(day);
+    nextDay.setDate(nextDay.getDate() + 1);
+    const dayRows = transactions.filter((tx) => {
+      const date = new Date(tx.created_at);
+      return date >= day && date < nextDay;
+    });
+    return {
+      label: new Intl.DateTimeFormat("id-ID", { weekday: "short" }).format(day),
+      incoming: dayRows.filter((tx) => tx.type === "in").reduce((sum, tx) => sum + Number(tx.amount || 0), 0),
+      outgoing: dayRows.filter((tx) => tx.type === "out").reduce((sum, tx) => sum + Number(tx.amount || 0), 0)
+    };
+  });
+  const weeklyMax = Math.max(1, ...weeklyStats.map((day) => day.incoming + day.outgoing));
+
   const actions = [
     { label: "Top Up", icon: Plus },
     { label: "Transfer", icon: ArrowUpRight },
@@ -204,6 +224,28 @@ export default function WalletApp() {
               <span>{label}</span>
             </button>
           ))}
+        </section>
+
+        <section className="section stats-card">
+          <div className="section-heading">
+            <div><p className="eyebrow">ANALISIS DEMO</p><h2>Statistik 30 catatan terakhir</h2></div>
+          </div>
+          <div className="stats-totals">
+            <div><span className="stats-dot incoming-dot"/> <span>Uang masuk</span><b>{money(totalIncoming)}</b></div>
+            <div><span className="stats-dot outgoing-dot"/> <span>Uang keluar</span><b>{money(totalOutgoing)}</b></div>
+          </div>
+          <div className="stats-chart" aria-label="Grafik transaksi simulasi tujuh hari terakhir">
+            {weeklyStats.map((day) => (
+              <div className="stats-day" key={day.label}>
+                <div className="stats-bars">
+                  <span className="stats-bar incoming-bar" style={{ height: `${Math.max(day.incoming ? 5 : 0, day.incoming / weeklyMax * 100)}%` }} title={`Masuk ${money(day.incoming)}`} />
+                  <span className="stats-bar outgoing-bar" style={{ height: `${Math.max(day.outgoing ? 5 : 0, day.outgoing / weeklyMax * 100)}%` }} title={`Keluar ${money(day.outgoing)}`} />
+                </div>
+                <span>{day.label}</span>
+              </div>
+            ))}
+          </div>
+          <p className="muted stats-caption">Grafik berdasarkan transaksi simulasi yang termuat di 30 catatan terakhir.</p>
         </section>
 
         <section className="section">
