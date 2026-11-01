@@ -138,3 +138,17 @@ footer { color:#5f6675;font-size:9px;letter-spacing:1px;margin-top:35px;display:
 .history-heading-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
 .history-heading-actions .link-button{white-space:nowrap}
 .history-heading-actions .link-button:disabled{opacity:.4;cursor:not-allowed}
+
+
+.budget-card{margin-top:22px;padding:16px;border:1px solid var(--line);border-radius:17px;background:#121720}
+.budget-amounts{display:flex;align-items:baseline;gap:7px;margin:17px 0 10px;flex-wrap:wrap}
+.budget-amounts b{font-size:21px}.budget-amounts span{font-size:11px;color:var(--muted)}
+.budget-track{height:9px;border-radius:20px;background:#252b38;overflow:hidden;margin-bottom:9px}
+.budget-track span{display:block;height:100%;border-radius:20px;background:linear-gradient(90deg,#5bdaa5,#82a7ff);transition:width .2s}
+.budget-form{display:grid;gap:8px;margin-top:16px}
+.budget-form label{font-size:11px;color:#c7cede}
+.budget-form>div{display:flex;gap:8px}
+.budget-form input,.demo-category-select{min-width:0;width:100%;border:1px solid #30394b;border-radius:10px;background:#0b0e15;color:#f6f7fb;padding:11px;font:inherit;font-size:12px}
+.budget-form button{border:0;border-radius:10px;background:#4779ec;color:white;padding:0 15px;font-size:11px;font-weight:700}
+.budget-note{font-size:9px;margin-top:10px}
+.demo-category-select{margin:0 0 5px}
