@@ -51,6 +51,7 @@ export default function WalletApp() {
   const [historySearch, setHistorySearch] = useState("");
   const [historyType, setHistoryType] = useState("all");
   const [historyDate, setHistoryDate] = useState("all");
+  const [historyCategory, setHistoryCategory] = useState("all");
   const [selectedCategory, setSelectedCategory] = useState("Lainnya");
   const [monthlyBudget, setMonthlyBudget] = useState(200000);
   const [budgetDraft, setBudgetDraft] = useState("200000");
@@ -113,10 +114,11 @@ export default function WalletApp() {
     const query = historySearch.trim().toLocaleLowerCase("id-ID");
     const matchesSearch = !query || String(tx.title || "").toLocaleLowerCase("id-ID").includes(query) || String(tx.status || "").toLocaleLowerCase("id-ID").includes(query) || String(tx.id || "").toLowerCase().includes(query);
     const matchesType = historyType === "all" || tx.type === historyType;
+    const matchesCategory = historyCategory === "all" || transactionCategory(tx.title) === historyCategory;
     const txDate = new Date(tx.created_at);
     const now = new Date();
     const matchesDate = historyDate === "all" || (historyDate === "today" && txDate.toDateString() === now.toDateString()) || (historyDate === "week" && (now - txDate) <= 7 * 86400000 && txDate <= now) || (historyDate === "month" && txDate.getMonth() === now.getMonth() && txDate.getFullYear() === now.getFullYear());
-    return matchesSearch && matchesType && matchesDate;
+    return matchesSearch && matchesType && matchesCategory && matchesDate;
   });
 
   const totalIncoming = transactions.filter((tx) => tx.type === "in").reduce((sum, tx) => sum + Number(tx.amount || 0), 0);
@@ -366,6 +368,7 @@ export default function WalletApp() {
           <div className="history-filter-row">
             <label>Jenis<select value={historyType} onChange={e => setHistoryType(e.target.value)}><option value="all">Semua</option><option value="in">Uang masuk</option><option value="out">Uang keluar</option></select></label>
             <label>Waktu<select value={historyDate} onChange={e => setHistoryDate(e.target.value)}><option value="all">Semua waktu</option><option value="today">Hari ini</option><option value="week">7 hari terakhir</option><option value="month">Bulan ini</option></select></label>
+            <label>Kategori<select value={historyCategory} onChange={e => setHistoryCategory(e.target.value)}><option value="all">Semua kategori</option><option>Makanan</option><option>Transportasi</option><option>Belanja</option><option>Tagihan</option><option>Hiburan</option><option>Pendidikan</option><option>Kesehatan</option><option>Lainnya</option></select></label>
           </div>
           <p className="muted filter-count">{filteredTransactions.length} dari {transactions.length} catatan</p>
         </div>
