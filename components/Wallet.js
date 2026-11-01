@@ -38,6 +38,9 @@ export default function WalletApp() {
   const [historySearch, setHistorySearch] = useState("");
   const [historyType, setHistoryType] = useState("all");
   const [historyDate, setHistoryDate] = useState("all");
+  const [historySearch, setHistorySearch] = useState("");
+  const [historyType, setHistoryType] = useState("all");
+  const [historyDate, setHistoryDate] = useState("all");
 
   const supabase = getSupabase();
 
@@ -90,6 +93,18 @@ export default function WalletApp() {
     const txDate = new Date(tx.created_at);
     const now = new Date();
     const matchesDate = historyDate === "all" || (historyDate === "today" && txDate.toDateString() === now.toDateString()) || (historyDate === "week" && (now - txDate) <= 7 * 86400000 && txDate <= now) || (historyDate === "month" && txDate.getMonth() === now.getMonth() && txDate.getFullYear() === now.getFullYear());
+    return matchesSearch && matchesType && matchesDate;
+  });
+
+  const filteredTransactions = transactions.filter((tx) => {
+    const query = historySearch.trim().toLowerCase();
+    const text = String(tx.title || "") + " " + String(tx.status || "") + " " + String(tx.id || "");
+    const txDate = new Date(tx.created_at);
+    const now = new Date();
+    const age = now.getTime() - txDate.getTime();
+    const matchesSearch = !query || text.toLowerCase().includes(query);
+    const matchesType = historyType === "all" || tx.type === historyType;
+    const matchesDate = historyDate === "all" || (historyDate === "today" && txDate.toDateString() === now.toDateString()) || (historyDate === "week" && age >= 0 && age <= 7 * 86400000) || (historyDate === "month" && txDate.getMonth() === now.getMonth() && txDate.getFullYear() === now.getFullYear());
     return matchesSearch && matchesType && matchesDate;
   });
 
@@ -227,8 +242,17 @@ export default function WalletApp() {
           <button className="link-button" onClick={loadWallet}><RefreshCw size={14}/> Muat ulang</button>
         </div>
         <p className="muted">Riwayat tersimpan untuk akun yang sedang login.</p>
-        {loading ? <p className="muted">Memuat riwayat...</p> : <TransactionList items={transactions} onSelect={setSelectedTransaction} />}
+        <div className="history-filters">
+          <input className="history-search" type="search" value={historySearch} onChange={e => setHistorySearch(e.target.value)} placeholder="Cari nama atau nomor catatan..." aria-label="Cari transaksi" />
+          <div className="history-filter-row">
+            <label>Jenis<select value={historyType} onChange={e => setHistoryType(e.target.value)}><option value="all">Semua</option><option value="in">Uang masuk</option><option value="out">Uang keluar</option></select></label>
+            <label>Waktu<select value={historyDate} onChange={e => setHistoryDate(e.target.value)}><option value="all">Semua waktu</option><option value="today">Hari ini</option><option value="week">7 hari terakhir</option><option value="month">Bulan ini</option></select></label>
+          </div>
+          <p className="muted filter-count">{filteredTransactions.length} dari {transactions.length} catatan</p>
+        </div>
+        {loading ? <p className="muted">Memuat riwayat...</p> : <TransactionList items={filteredTransactions} onSelect={setSelectedTransaction} />}
         {!loading && transactions.length === 0 && <p className="muted empty-state">Belum ada transaksi.</p>}
+        {!loading && transactions.length > 0 && filteredTransactions.length === 0 && <p className="muted empty-state">Tidak ada transaksi yang cocok. Coba ubah kata kunci atau filter.</p>}
       </section>}
 
       {tab === "Profil" && <section className="section page-section">
