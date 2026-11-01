@@ -320,6 +320,8 @@ export default function WalletApp() {
           <div className="budget-amounts"><b>{money(currentMonthExpenses)}</b><span>dari {money(monthlyBudget)}</span></div>
           <div className="budget-track"><span style={{width: `${budgetPercent}%`}} /></div>
           <p className="muted">{budgetPercent}% terpakai bulan ini · berdasarkan catatan uang keluar</p>
+          {budgetPercent >= 100 ? <div className="demo-warning" role="status">Batas anggaran demo terlampaui sebesar {money(currentMonthExpenses - monthlyBudget)}. Periksa kembali catatan pengeluaranmu.</div> : budgetPercent >= 80 ? <div className="demo-warning" role="status">Perhatian: anggaran demo sudah terpakai {budgetPercent}%. Sisa sekitar {money(monthlyBudget - currentMonthExpenses)}.</div> : <p className="muted small">Anggaran masih dalam batas yang ditetapkan.</p>}
+
           <form className="budget-form" onSubmit={saveMonthlyBudget}>
             <label htmlFor="monthly-demo-budget">Atur batas anggaran (Rp)</label>
             <div><input id="monthly-demo-budget" type="number" min="1000" max="100000000" step="1000" value={budgetDraft} onChange={e => setBudgetDraft(e.target.value)}/><button type="submit">Simpan</button></div>
